@@ -61,8 +61,8 @@ cat "$DATA_FILE" | awk -v blue="$BLUE" -v green="$GREEN" -v reset="$RESET" -v bo
         gsub(/[[:space:]]+$/, "", desc)
         
         # Output: Command (Green) Description [Tags] (Gray)
-        # Using a fixed width for description to align tags roughly
-        printf "%s%-12s%s %-45s %s%s%s\n", green, cmd, reset, desc, gray, extracted_tags, reset
+        # Using minimal spacing (1 space) between description and tags
+        printf "%s%-12s%s %s %s%s%s\n", green, cmd, reset, desc, gray, extracted_tags, reset
     }
 ' | fzf \
     --ansi \
