@@ -1,59 +1,47 @@
 #!/bin/bash
 set -e
 
-# Get absolute path to the cheat script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_SCRIPT="$SCRIPT_DIR/nvim-cheats.sh"
-HYPR_DIR="$HOME/.config/hypr"
-BINDINGS_CONF="$HYPR_DIR/bindings.conf"
-HYPRLAND_CONF="$HYPR_DIR/hyprland.conf"
+# Define paths
+SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_NAME="nvim-cheats.sh"
+CONFIG_NAME="nvim-cheats.conf"
 
-# Ensure target script is executable
-chmod +x "$TARGET_SCRIPT"
-echo "Made $TARGET_SCRIPT executable."
+DEST_SCRIPT_DIR="$HOME/.config/hypr/scripts"
+DEST_CONFIG_DIR="$HOME/.config/hypr"
 
-# 1. Configure Keybinding in bindings.conf
-if [ -f "$BINDINGS_CONF" ]; then
-    # Backup
-    cp "$BINDINGS_CONF" "$BINDINGS_CONF.bak.$(date +%s)"
-    echo "Backed up bindings.conf"
+DEST_SCRIPT="$DEST_SCRIPT_DIR/$SCRIPT_NAME"
+DEST_CONFIG="$DEST_CONFIG_DIR/$CONFIG_NAME"
 
-    # Check if binding already exists (simplistic check)
-    if grep -q "nvim-cheats.sh" "$BINDINGS_CONF"; then
-        echo "Keybinding seems to already exist in $BINDINGS_CONF. Skipping."
-    else
-        echo "" >> "$BINDINGS_CONF"
-        echo "# nvim-cheats launch binding" >> "$BINDINGS_CONF"
-        # Using bindd for description if supported, else bind
-        echo "bind = SUPER, V, exec, ghostty --title=nvim-cheats -e $TARGET_SCRIPT" >> "$BINDINGS_CONF"
-        echo "Added SUPER+V binding to $BINDINGS_CONF"
-    fi
-else
-    echo "Error: $BINDINGS_CONF not found."
+# Colors
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RESET="\033[0m"
+
+echo "Installing nvim-cheats..."
+
+# 1. Install the script
+if [ ! -d "$DEST_SCRIPT_DIR" ]; then
+    mkdir -p "$DEST_SCRIPT_DIR"
+    echo "Created directory: $DEST_SCRIPT_DIR"
 fi
 
-# 2. Configure Window Rules in hyprland.conf
-if [ -f "$HYPRLAND_CONF" ]; then
-    # Backup
-    cp "$HYPRLAND_CONF" "$HYPRLAND_CONF.bak.$(date +%s)"
-    echo "Backed up hyprland.conf"
+cp "$SOURCE_DIR/$SCRIPT_NAME" "$DEST_SCRIPT"
+chmod +x "$DEST_SCRIPT"
+echo -e "${GREEN}Installed script to: $DEST_SCRIPT${RESET}"
 
-    # Check for existing rules
-    if grep -q "title:^(nvim-cheats)$" "$HYPRLAND_CONF"; then
-        echo "Window rules seem to already exist in $HYPRLAND_CONF. Skipping."
-    else
-        echo "" >> "$HYPRLAND_CONF"
-        echo "# nvim-cheats window rules" >> "$HYPRLAND_CONF"
-        echo "windowrule = float, title:^(nvim-cheats)$" >> "$HYPRLAND_CONF"
-        echo "windowrule = size 600 400, title:^(nvim-cheats)$" >> "$HYPRLAND_CONF"
-        echo "windowrule = center, title:^(nvim-cheats)$" >> "$HYPRLAND_CONF"
-        echo "Added window rules to $HYPRLAND_CONF"
-    fi
-else
-    echo "Error: $HYPRLAND_CONF not found."
-fi
+# 2. Install the config file
+cp "$SOURCE_DIR/$CONFIG_NAME" "$DEST_CONFIG"
+echo -e "${GREEN}Installed config to: $DEST_CONFIG${RESET}"
 
-echo "--------------------------------------------------------"
-echo "Installation complete."
-echo "Please run 'hyprctl reload' to apply changes immediately."
-echo "--------------------------------------------------------"
+# 3. Print instructions for the user
+echo ""
+echo "------------------------------------------------------------------"
+echo -e "${GREEN}Installation successful!${RESET}"
+echo ""
+echo -e "To enable nvim-cheats, please add the following line to your"
+echo -e "${YELLOW}~/.config/hypr/hyprland.conf${RESET} (or bindings.conf):"
+echo ""
+echo -e "    ${YELLOW}source = $DEST_CONFIG${RESET}"
+echo ""
+echo "After adding the line, run 'hyprctl reload' to apply changes."
+echo "------------------------------------------------------------------"
