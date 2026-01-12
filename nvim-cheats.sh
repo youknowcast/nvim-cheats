@@ -33,38 +33,36 @@ if [ ! -f "$DATA_FILE" ]; then
     fi
 fi
 
-# Use awk to colorize the input for fzf
-# Lines starting with # are headers (Blue)
-# Commands (first column) are Green
-# Tags (enclosed in []) are Gray
-# Descriptions are default/white
+# Use awk to format data
+# Output format: Command Description [Tags]
 cat "$DATA_FILE" | awk -v blue="$BLUE" -v green="$GREEN" -v reset="$RESET" -v bold="$BOLD" -v gray="$GRAY" '
-    /^#/ { print blue bold $0 reset; next }
+    /^#/ { 
+        print blue bold $0 reset
+        next 
+    }
     /^[[:space:]]*$/ { next }
     { 
         # Split line into parts
-        # 1. Command (up to first space sequence)
         match($0, /^[[:graph:]]+/)
         cmd = substr($0, RSTART, RLENGTH)
         remain = substr($0, RSTART + RLENGTH)
         
-        # 2. Extract Tag [Tag] if present
-        tag = ""
+        # Extract Tags
         desc = remain
-        if (match(remain, /\[[^]]+\]/)) {
-            tag = substr(remain, RSTART, RLENGTH)
-            
-            # Re-construct description part removing leading spaces
-            gsub(/^[[:space:]]+/, "", remain)
-            
-            # Colorize the tag part within the remainder
-            gsub(/\[[^]]+\]/, gray "&" reset, remain)
-            desc = remain
-        } else {
-            gsub(/^[[:space:]]+/, "", desc)
+        extracted_tags = ""
+        while (match(desc, /\[[^]]+\]/)) {
+            t = substr(desc, RSTART, RLENGTH)
+            extracted_tags = extracted_tags t
+            sub(/\[[^]]+\]/, "", desc)
         }
-
-        printf "%s%-12s%s %s\n", green, cmd, reset, desc
+        
+        # Clean up description
+        gsub(/^[[:space:]]+/, "", desc)
+        gsub(/[[:space:]]+$/, "", desc)
+        
+        # Output: Command (Green) Description [Tags] (Gray)
+        # Using a fixed width for description to align tags roughly
+        printf "%s%-12s%s %-45s %s%s%s\n", green, cmd, reset, desc, gray, extracted_tags, reset
     }
 ' | fzf \
     --ansi \

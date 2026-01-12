@@ -1,3 +1,12 @@
+# Key Notation
+<C->         [Key][Movement][Editing][Visual][Window] Control key (Example: <C-w> means Ctrl + w)
+<S->         [Key][Movement][Editing][Visual] Shift key
+<M->         [Key] Alt key (Meta)
+<Space>      [Key][Leader] Space bar
+<CR>         [Key] Enter / Return
+<Esc>        [Key][Editing][Visual] Escape key
+<Tab>        [Key] Tab key
+
 # Movement
 h            [Movement] Move left
 j            [Movement] Move down
