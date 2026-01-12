@@ -7,97 +7,63 @@ BLUE="\033[34m"
 GREEN="\033[32m"
 YELLOW="\033[33m"
 CYAN="\033[36m"
+GRAY="\033[90m"
 
-# Prepare data with ANSI colors for better visibility in fzf
-# Format: "Command  Description"
-generate_data() {
-    cat <<EOF
-# Movement
-h            Move left
-j            Move down
-k            Move up
-l            Move right
-w            Jump by start of words (forward)
-b            Jump by start of words (backward)
-e            Jump by end of words (forward)
-ge           Jump by end of words (backward)
-0            Start of line
-^            Start of line (non-blank)
-$            End of line
-gg           Go to first line
-G            Go to last line
-<C-u>        Up half page
-<C-d>        Down half page
-<C-f>        Page down
-<C-b>        Page up
-%            Go to matching bracket
+# Resolve script directory to find data files
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DATA_DIR="$SCRIPT_DIR/data"
 
-# Editing
-i            Insert before cursor
-a            Insert after cursor
-I            Insert at line start
-A            Insert at line end
-o            Append new line below
-O            Append new line above
-r            Replace one character
-R            Enter replace mode
-x            Delete character
-dd           Delete line
-D            Delete to end of line
-yy           Yank (copy) line
-y$           Yank to end of line
-p            Paste after cursor
-P            Paste before cursor
-u            Undo
-<C-r>        Redo
-.            Repeat last command
+# Select data source based on locale
+if [[ "$LANG" == *"ja"* ]]; then
+    DATA_FILE="$DATA_DIR/ja"
+    PROMPT="nvim(ja)> "
+else
+    DATA_FILE="$DATA_DIR/en"
+    PROMPT="nvim(en)> "
+fi
 
-# Visual Mode
-v            Visual mode (char)
-V            Visual mode (line)
-<C-v>        Visual mode (block)
-
-# Window Management
-<C-w>h       Move to left window
-<C-w>j       Move to window below
-<C-w>k       Move to window above
-<C-w>l       Move to right window
-<C-w>s       Split horizontal
-<C-w>v       Split vertical
-<C-w>c       Close window
-<C-w>o       Close all other windows
-
-# Search & Replace
-/pattern     Search forward
-?pattern     Search backward
-n            Next match
-N            Previous match
-:%s/old/new/g Replace all in file
-
-# Files
-:w           Save file
-:q           Quit
-:q!          Quit without saving
-:wq          Save and quit
-:x           Save and quit
-
-# Leader (Example)
-<Space>f     Find file (Telescope)
-<Space>g     Live grep (Telescope)
-<Space>e     Toggle explorer
-EOF
-}
+# Fallback if data file missing
+if [ ! -f "$DATA_FILE" ]; then
+    # Try English as fallback
+    DATA_FILE="$DATA_DIR/en"
+    PROMPT="nvim(fallback)> "
+    if [ ! -f "$DATA_FILE" ]; then
+        echo "Error: Data file not found in $DATA_DIR"
+        exit 1
+    fi
+fi
 
 # Use awk to colorize the input for fzf
-generate_data | awk -v blue="$BLUE" -v green="$GREEN" -v reset="$RESET" -v bold="$BOLD" '
+# Lines starting with # are headers (Blue)
+# Commands (first column) are Green
+# Tags (enclosed in []) are Gray
+# Descriptions are default/white
+cat "$DATA_FILE" | awk -v blue="$BLUE" -v green="$GREEN" -v reset="$RESET" -v bold="$BOLD" -v gray="$GRAY" '
     /^#/ { print blue bold $0 reset; next }
     /^[[:space:]]*$/ { next }
     { 
+        # Split line into parts
+        # 1. Command (up to first space sequence)
         match($0, /^[[:graph:]]+/)
         cmd = substr($0, RSTART, RLENGTH)
-        desc = substr($0, RSTART + RLENGTH)
-        gsub(/^[[:space:]]+/, "", desc)
+        remain = substr($0, RSTART + RLENGTH)
         
+        # 2. Extract Tag [Tag] if present
+        tag = ""
+        desc = remain
+        if (match(remain, /\[[^]]+\]/)) {
+            tag = substr(remain, RSTART, RLENGTH)
+            
+            # Re-construct description part removing leading spaces
+            gsub(/^[[:space:]]+/, "", remain)
+            
+            # Colorize the tag part within the remainder
+            gsub(/\[[^]]+\]/, gray "&" reset, remain)
+            desc = remain
+        } else {
+            gsub(/^[[:space:]]+/, "", desc)
+        }
+
         printf "%s%-12s%s %s\n", green, cmd, reset, desc
     }
 ' | fzf \
@@ -107,8 +73,10 @@ generate_data | awk -v blue="$BLUE" -v green="$GREEN" -v reset="$RESET" -v bold=
     --border \
     --margin=1 \
     --padding=1 \
-    --prompt="nvim> " \
+    --prompt="$PROMPT" \
     --pointer="▶" \
     --marker="✓" \
     --no-info \
     --cycle
+
+# Exit logic is handled by terminal window closing or ESC in fzf
