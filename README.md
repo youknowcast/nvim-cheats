@@ -3,8 +3,8 @@
 Omarchy (Hyprland) 環境向けの、軽量で高速な Neovim チートシートランチャーです。
 「あの操作、キーバインドなんだっけ？」を瞬時に解決します。
 
-https://github.com/user-attachments/assets/movie.mp4
-<!-- ※ GitHubにプッシュ後、動画をアップロードしてリンクを差し替えてください。ローカルでは movie.mp4 を参照します -->
+
+https://github.com/user-attachments/assets/771630a0-5186-4c3e-bd7b-9bb087187e77
 
 ## 特徴
 
@@ -40,7 +40,7 @@ https://github.com/user-attachments/assets/movie.mp4
 
 ## 使い方
 
-*   **起動**: `Super + V` (デフォルト)
+*   **起動**: `Super + I` (デフォルト)
 *   **検索**:
     *   `save` -> 保存関連のコマンドを検索
     *   `window` -> ウィンドウ操作関連 (`[Window]` タグ) を検索
